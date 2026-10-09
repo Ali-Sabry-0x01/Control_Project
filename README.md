@@ -6,6 +6,7 @@
 **Author:** Ali Sabry Ibraheem  
 **Student ID:** 2400546  
 **Department:** Computer and Systems Engineering
+**🎥 Milestone 8 - Project Demo Video:** [Click here to watch the video](https://youtu.be/I62e5S9h8gc)
 
 <p align="center">
   <img src="assets/demo.gif" alt="Autonomous Vehicle Simulation Demo" width="100%" />
