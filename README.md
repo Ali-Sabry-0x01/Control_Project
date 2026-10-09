@@ -3,6 +3,10 @@
 **Autotronics Research Lab (ARL) — Ain Shams University**  
 *Course: Autonomous Vehicles & Drive-by-Wire Systems | Individual Project*
 
+**Author:** Ali Sabry Ibraheem  
+**Student ID:** 2400546  
+**Department:** Computer and Systems Engineering
+
 <p align="center">
   <img src="assets/demo.gif" alt="Autonomous Vehicle Simulation Demo" width="100%" />
 </p>
@@ -24,12 +28,6 @@ You will work through a series of milestones, each building on the last:
 7. **Report your results** — Compare your controllers and document your findings.
 
 The car model is realistic: it has velocity as a state (not a direct input), meaning it accelerates and decelerates due to drag and friction — just like a real vehicle.
-
-
-
----
-
-
 
 ---
 
@@ -147,6 +145,7 @@ Some telemetry topics are only available after the corresponding analyzer work i
 - **Milestone 8**: Deliverable 2 — Technical Video Walkthrough (3–5 Minute Demo)
 
 ---
+
 ## Milestone 6: Free Exploration & Reference Resources
 
 To connect your work in this lab to industrial autonomous vehicle systems, modern simulators, and production ROS 2 frameworks, explore the following organized learning resources. These materials illustrate how the 2D planar kinematic bicycle model extends into multi-body dynamics, 3D physics engines, and advanced sampling-based predictive control.
@@ -186,27 +185,38 @@ While kinematic models assume zero tire slip, physical vehicles experience tire 
 ### 3. Stochastic Sampling-Based Predictive Control (Nav2 MPPI)
 *Explore model predictive path integral control for non-linear vehicle systems.*
 
-Model Predictive Path Integral (MPPI) control is an advanced algorithm that generates thousands of randomized candidate trajectories in parallel (using GPU or multi-core CPU) and averages them using path integral weighting to produce optimal controls without needing gradient-based solvers.
-
+Model Predictive Path Integral (MPPI) control is an advanced algorithm that generates thousands of randomized candidate trajectories in parallel (using GPU or multi-core CPU)
 #### Curated Resources:
 - [Nav2 MPPI Controller](https://index.ros.org/p/nav2_mppi_controller/) — Production real-time MPPI controller package in the ROS 2 Navigation stack with dynamic obstacle avoidance and customizable cost functions.
 
 ---
 
 ### 💡 Synthesis Task for Your Report:
-In your `README.md` report, synthesize your takeaways from exploring these organized resources:
-1. **Kinematics vs Multi-Body**: How 4-wheel Ackermann kinematics accounts for differing inner and outer wheel turning radii ($\delta_{inner}$ vs $\delta_{outer}$), and how this is modeled in `ros2_control`.
-2. **2D vs 3D Simulation**: The computational and modeling trade-offs between lightweight 2D kinematic simulation and full 3D physics engines (Gazebo / MVSim).
-3. **Deterministic vs Sampling Control**: How modern sampling-based controllers (Nav2 MPPI) differ in flexibility, obstacle handling, and compute requirements compared to deterministic optimization (MPC).
+**In your `README.md` report, synthesize your takeaways from exploring these organized resources:**
+
+1. **Kinematics vs Multi-Body**: 
+   The 2D kinematic bicycle model simplifies the vehicle by representing the two front wheels and two rear wheels as single wheels on the centerline. In reality, a physical vehicle uses Ackermann kinematics where the inner wheel must turn at a sharper angle ($\delta_{inner}$) than the outer wheel ($\delta_{outer}$) to prevent tire scrubbing during cornering. `ros2_control` manages this complexity by utilizing hardware interfaces and specific steering controllers (like `ackermann_steering_controller`) that calculate and actuate the exact angle for each independent wheel joint, bridging the gap between simplified algorithms and physical hardware limits.
+
+2. **2D vs 3D Simulation**: 
+   2D kinematic simulations (like the one used in this project) are computationally lightweight and excellent for rapid prototyping of high-level control logic. However, they assume perfect traction (zero slip) and ignore vertical dynamics. Modern 3D physics engines like Gazebo or MVSim introduce multi-body dynamics, Pacejka tire friction models, suspension compliance, and sensor noise. While computationally expensive, 3D simulations are crucial for verifying that control algorithms (like MPC) won't cause the vehicle to spin out or roll over due to aggressive lateral acceleration before real-world deployment.
+
+3. **Deterministic vs Sampling Control**: 
+   Deterministic controllers like MPC use gradient-based optimization solvers (e.g., `scipy.optimize` used in this project) to find a single optimal trajectory. They are effective but can struggle with non-linear constraints or get trapped in local minima (resulting in bounding clipping warnings). On the other hand, sampling-based controllers like Nav2 MPPI generate thousands of random trajectory rollouts in parallel (leveraging GPUs). They evaluate the cost of each random path and average them. This makes MPPI much more robust to noise, highly flexible for dynamic obstacle avoidance, and free from the mathematical instability of complex optimization solvers.
 
 ---
+
 ## 🏆 Telemetry Benchmark Leaderboard
 
-*(To be completed by the student as part of Milestone 7)*
+*(Telemetry Data collected via the custom `lap_analyzer` node in the ROS 2 simulation)*
 
 | Controller Mode | Best Lap Time (s) | Top Speed (m/s) | Mean CTE (m) | Max CTE (m) | RMS CTE (m) | Laps Completed / Status |
 |---|---|---|---|---|---|---|
-| **Manual Teleoperation** | — | — | — | — | — | — |
-| **Lateral PID (Reactive)** | — | — | — | — | — | — |
-| **Pure Pursuit (Preview)** | — | — | — | — | — | — |
-| **Extended Kinematic MPC (Optimal)** | — | — | — | — | — | — |
+| **Manual Teleoperation** | N/A | N/A | N/A | N/A | N/A | Testing Only |
+| **Lateral PID (Reactive)** | 229.10 | 5.02 | 93.742 | 238.364 | 121.677 | 1 Lap Completed (Conservative) |
+| **Pure Pursuit (Preview)** | 198.20 | 23.72 | 0.694 | 6.217 | 1.616 | 1 Lap Completed (**Best Overall**) |
+| **Extended Kinematic MPC (Optimal)** | 226.88 | 23.00 | 104.027 | 198.372 | 140.507 | 1 Lap Completed (Solver limited) |
+
+### 🔍 Controller Comparison & Observations:
+* **Pure Pursuit** achieved the most robust performance, yielding the fastest lap time (**198.20s**) and the tightest path tracking (**0.694m Mean CTE**). Its geometric lookahead logic naturally scales with speed, making it highly effective.
+* **Lateral PID** struggled significantly without preview information. It required extremely conservative speeds (max 5.02 m/s) to maintain stability, resulting in wide cornering and high CTE errors.
+* **MPC** showed excellent straight-line acceleration (23.00 m/s) but suffered during sharp curves due to the computational overhead of the `scipy` optimization solver, which frequently hit boundary limits. With a faster real-time solver (e.g., C++ CasADi or OSQP), its performance would surpass Pure Pursuit.
